@@ -3,14 +3,14 @@ from typing import Dict, List
 import time
 
 
-def sort_tables(result):
-    v = {}
+def sort_tables(files):
+    names = set(files.values())
 
-    for key, value in sorted(result.items()):
-        v.setdefault(value, []).append(key)
-
-    return v
-
+# use a list comprehension, iterating through keys and checking the values match each n
+    d = {}
+    for n in names:
+        d[n] = [k for k in files.keys() if files[k] == n]
+    return d 
 
 class DifferentTableConstraint(Constraint[str, str]):
     def __init__(self, M1: str, M2: str) -> None:
@@ -59,6 +59,8 @@ if __name__ == "__main__":
     if solution is None:
         print("No solution found!")
     else:
-        print(sort_tables(solution))
+        sorted_tables = sort_tables(solution)
+        for row in sorted_tables:
+            print(f"Table {row+1}: {sorted_tables[row]}")
 
     print("Time to complete in seconds: " + str((time.time() - startingTime)))
