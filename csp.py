@@ -7,19 +7,15 @@ D = TypeVar('D')  # domain type
 
 # Base class for all constraints
 class Constraint(Generic[V, D], ABC):
-    # The variables that the constraint is between
+
     def __init__(self, variables: List[V]) -> None:
         self.variables = variables
 
-    # Must be overridden by subclasses
     @abstractmethod
     def satisfied(self, assignment: Dict[V, D]) -> bool:
         ...
 
 
-# A constraint satisfaction problem consists of variables of type V
-# that have ranges of values known as domains of type D and constraints
-# that determine whether a particular variable's domain selection is valid
 class CSP(Generic[V, D]):
     def __init__(self, variables: List[V], domains: Dict[V, List[D]]) -> None:
         self.variables: List[V] = variables  # variables to be constrained
@@ -45,11 +41,15 @@ class CSP(Generic[V, D]):
                 return False
         return True
 
-    def backtracking_search(self, assignment: Dict[V, D] = {}, counters=[0, 0, 0, 0]) -> Optional[Dict[V, D]]:
+    def forward_checking(self, assignment: Dict[V, D] = {}, counters: List[int] = [0, 0, 0, 0, 0]) -> Optional[
+        Dict[V, D]]:
 
         # assignment is complete if every variable is assigned (our base case)
         if len(assignment) == len(self.variables):
+            print("Number of cycles: " + str(counters[4]))
             return assignment
+
+        counters[4] += 1
 
         # get all variables in the CSP but not in the assignment
         unassigned: List[V] = [v for v in self.variables if v not in assignment]
@@ -60,7 +60,7 @@ class CSP(Generic[V, D]):
             illegal = False
             for i in range(len(counters)):
                 if i == value:
-                    if counters[i]+1 > 5:
+                    if counters[i] + 1 > 5:
                         illegal = True
                 else:
                     continue
@@ -72,13 +72,14 @@ class CSP(Generic[V, D]):
             local_assignment = assignment.copy()
             local_assignment[first] = value
 
-            # if we're still consistent, we recurse (continue)
             if self.consistent(first, local_assignment):
                 counters[value] += 1
-                result: Optional[Dict[V, D]] = self.backtracking_search(local_assignment, counters)
+                result: Optional[Dict[V, D]] = self.forward_checking(local_assignment, counters)
                 counters[value] -= 1
-                # if we didn't find the result, we will end up backtracking
+
                 if result is not None:
                     return result
+            else:
+                break
 
         return None
